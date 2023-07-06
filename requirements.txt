@@ -1,0 +1,13 @@
+flask 
+request
+flask_cors
+flask_jwt_extended
+flask_socketio
+pymongo
+bson
+hashlib
+secrets
+BeautifulSoup
+proxmoxer
+dotenv
+urllib3
