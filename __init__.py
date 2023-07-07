@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from flask import Flask, request, jsonify, current_app
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required
@@ -15,7 +16,7 @@ app.config['DATABASE_CONN_STRING'] = "mongodb://root:cyberlabs@localhost:27017/"
 app.config['DATABASE_NAME'] = "cyberlabs"
 cors = CORS(app)
 jwt = JWTManager(app)
-sockio = SocketIO(app, cors_allowed_origins="*")
+sockio = SocketIO(app, cors_allowed_origins="cyberlabs.surge.sh")
 
 from auth import auth
 from admin import admin
@@ -47,5 +48,4 @@ def home():
     return jsonify(res)
 
 if __name__ == '__main__':
-    app.debug = True
     sockio.run(app)
