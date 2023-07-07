@@ -16,7 +16,7 @@ app.config['DATABASE_CONN_STRING'] = "mongodb://root:cyberlabs@localhost:27017/"
 app.config['DATABASE_NAME'] = "cyberlabs"
 cors = CORS(app)
 jwt = JWTManager(app)
-sockio = SocketIO(app, cors_allowed_origins="cyberlabs.surge.sh")
+sockio = SocketIO(app, origins=["https://cyberlabs.surge.sh"])
 
 from auth import auth
 from admin import admin
