@@ -15,7 +15,10 @@ def create_sockmanager(sockio: SocketIO):
 
     def authenticate_user(token):
         if token['token'] is not None:
-            user = json.loads(b64decode(token['token'].split('.')[1]).decode())['sub']
+            jwt = token['token'].split('.')[1]
+            if not len(jwt) % 4 == 0:
+                jwt += '=' * (4 - len(jwt) % 4) 
+            user = json.loads(b64decode(jwt).decode())['sub']
             user_obj = get_user(user)
             if user_obj:
                 return user_obj
@@ -113,7 +116,7 @@ def create_sockmanager(sockio: SocketIO):
     def create_machine():
         request_data = request.get_json()
         if request_data:
-            user = current_user['username']
+            user = current_user
             transact_id = create_user_machine(user, request_data)
             return jsonify({
                 'result': 'success',

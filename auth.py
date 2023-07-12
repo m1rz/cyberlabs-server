@@ -194,7 +194,7 @@ def get_all_machines():
             return machines_list
         return False
 
-def create_user_machine(user: str, data: dict):
+def create_user_machine(user, data: dict):
     machine_info = data.copy()
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
         db = client[current_app.config['DATABASE_NAME']]
@@ -202,6 +202,7 @@ def create_user_machine(user: str, data: dict):
         machine = db.machines.insert_one({
             "name": f"{machine_info.pop('name')}",
             "desc": f"{machine_info.pop('desc')}",
+            "owner": ObjectId(user['_id']),
             "state": "Stopped",
             "params": machine_info,
         })
