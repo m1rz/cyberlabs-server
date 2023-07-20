@@ -3,10 +3,16 @@ import json
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, current_user
 from pymongo import MongoClient
+from jinja2 import Environment, FileSystemLoader
 from bson.objectid import ObjectId
 import hashlib
 
+from proxmox import get_new_vm_id
+
 auth = Blueprint('auth', __name__)
+
+env = Environment(loader=FileSystemLoader("config/templates/"))
+new_machine = env.get_template("ubuntu-2204-server.j2")
 
 def authenticate_user(token):
     if token is not None:
@@ -117,23 +123,43 @@ def get_all_users():
 
         return users
     
-@auth.route('/user/<user>', methods = ['DELETE'])
+@auth.route('/user/<user>', methods = ['PUT','DELETE'])
 def delete_user(user):
-    auth_header = request.headers['Authorization']
-    if auth_header:
-        user_obj = authenticate_user(auth_header.split(" ")[1])
-        if user_obj and user_obj['role'] == 'admin':
+    if request.method == 'PUT':
+        if request.form['oldpw'] and request.form['newpw']:
             with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
-                db = client[current_app.config['DATABASE_NAME']]
-                res = db.users.delete_one({"username": f"{user}"})
-                if res.acknowledged:
-                    return jsonify({
-                        "result": "success",
-                        "deleted_lines": f"{res.deleted_count}",
-                    })
-    return jsonify({
-        "result": "Failed to delete user."
-    })
+                    db = client[current_app.config['DATABASE_NAME']]
+                    res = db.users.update_one({
+                        "username": user,
+                        "password": f"{hashlib.sha256(str(request.form['oldpw']).encode()).hexdigest()}",
+                    }, {"$set": {
+                        "password": f"{hashlib.sha256(str(request.form['newpw']).encode()).hexdigest()}"
+                    }})
+                    if res.matched_count == 1:
+                        return jsonify({
+                            "result": "success"
+                        })
+        return jsonify({
+            "result": "failure"
+        })
+                        
+
+    elif request.method == 'DELETE':
+        auth_header = request.headers['Authorization']
+        if auth_header:
+            user_obj = authenticate_user(auth_header.split(" ")[1])
+            if user_obj and user_obj['role'] == 'admin':
+                with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
+                    db = client[current_app.config['DATABASE_NAME']]
+                    res = db.users.delete_one({"username": f"{user}"})
+                    if res.acknowledged:
+                        return jsonify({
+                            "result": "success",
+                            "deleted_lines": f"{res.deleted_count}",
+                        })
+        return jsonify({
+            "result": "Failed to delete user."
+        })
 
 def login_session(user_name, sid):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
@@ -199,11 +225,27 @@ def create_user_machine(user, data: dict):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
         db = client[current_app.config['DATABASE_NAME']]
 
-        machine = db.machines.insert_one({
+        options = {
             "name": f"{machine_info.pop('name')}",
             "desc": f"{machine_info.pop('desc')}",
             "owner": ObjectId(user['_id']),
             "state": "Stopped",
             "params": machine_info,
+        }
+
+        machine_plan = new_machine.render({
+            **options,
+            **(machine_info.get("data", {})),
+            'username': user["username"],
+            'password': user['username'],
+            'vmid': get_new_vm_id()
         })
+
+        file_name = user["username"] + "-" + options.get("name") + ".tf"
+        print(f"Writing Terraform plan to {file_name}...")
+
+        with open("config/proxmox/" + file_name, "w") as plan_file:
+            plan_file.write(machine_plan)
+
+        machine = db.machines.insert_one(options)
         return machine.inserted_id

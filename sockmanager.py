@@ -63,7 +63,10 @@ def create_sockmanager(sockio: SocketIO):
 
     @sockio.on('all_machines')
     def all_machines():
-        user = get_user(get_user_from_sid(request.sid)['name'])
+        from_sid = get_user_from_sid(request.sid)
+        if not from_sid:
+            return
+        user = get_user(from_sid['name'])
         if user and user['role'] == 'admin':
             machines = get_all_machines()
             emit("all_machines", tuple(machines))
@@ -80,9 +83,19 @@ def create_sockmanager(sockio: SocketIO):
     @sockio.on('templates')
     def all_templates():
         emit("templates",(
-        {'name': 'Machine Template 1'},
-        {'name': 'Machine Template 2'},
-        {'name': 'Machine Template 3'}))
+        {
+            'name': 'Machine Template 1',
+            'description': 'Sample description for machine.',
+        },
+        {
+            'name': 'Machine Template 2',
+            'description': 'Sample description for machine.',
+        },
+        {
+            'name': 'Machine Template 3',
+            'description': 'Sample description for machine.'
+        },
+            ))
 
     @sockio.on('get_os_versions')
     def get_os_versions():

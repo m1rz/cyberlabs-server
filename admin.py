@@ -4,8 +4,10 @@ import json
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, current_user
 from pymongo import MongoClient
+from functools import reduce
 
 from auth import get_user
+from proxmox import get_system_resources
 
 admin = Blueprint('admin', __name__)
 
@@ -67,3 +69,13 @@ def delete_user(user):
     return jsonify({
         "result": "Failed to delete user."
     })
+
+@admin.route('/stats', methods = ['GET'])
+@jwt_required()
+def server_stats():
+    if authenticate_admin(request):
+        stats = {}
+        data = get_system_resources()
+        for key in data[0].keys():
+            stats[key] = reduce(lambda a, b: a + b.get(key), data, 0) / len(data)
+        return jsonify(stats)
