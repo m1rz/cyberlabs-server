@@ -1,6 +1,7 @@
 from proxmoxer import ProxmoxAPI
 from dotenv import load_dotenv
 from urllib3.exceptions import InsecureRequestWarning
+from urllib.parse import quote
 from datetime import datetime, timedelta
 from math import trunc
 import os, requests
@@ -42,7 +43,7 @@ def get_new_vm_id():
     vmids = []
     for machine in get_all_vms():
         vmids.append(machine['vmid'])
-    vm_id = 100
+    vm_id = 200
     while vm_id in vmids:
         vm_id += 1
     return vm_id
@@ -60,17 +61,24 @@ def delete_vm(vm_id):
         return proxmox.nodes('proxmox').qemu(vm_id).delete()
     return None
     
-def connectVM(user: str, vmid: int):
+def connect_vm(user: str, vmid: int):
     pmuser = f"{user}{vmid}@pve"
-    proxmox.access.users.put(userid=pmuser,password=pmuser,expires=trunc(datetime.now() + timedelta(hours=2)))
-    proxmox.access.acl.put(path=f"/vms/{vmid}",roles="VNCUser",users=pmuser)
+    users = [user['userid'] for user in proxmox.access.users.get()]
+    if not pmuser in users:
+        proxmox.access.users.post(userid=pmuser,password=pmuser,expire=(datetime.now() + timedelta(hours=2)).strftime('%s'))
+        proxmox.access.acl.put(path=f"/vms/{vmid}",roles="VNCUser",users=pmuser)
     ticket = proxmox.access.ticket.post(username=pmuser,password=pmuser)
     if not ticket:
         return False
-    vncticket = proxmox.nodes('proxmox').qemu(f'{vmid}').vncproxy.post(websocket=1)
-    if 'upid' in vncticket:
-        return True
-    vncconnect = proxmox.nodes('proxmox').qemu(f'{vmid}').vncwebsocket(vncticket=ticket['ticket'],port=vncticket['port'])
+    usermox = ProxmoxAPI(os.getenv('PROXMOX_URL'), user=pmuser, password=pmuser, verify_ssl=False)
+    vncticket = usermox.nodes('proxmox').qemu(f'{vmid}').vncproxy.post(websocket=1)
+    """ if 'upid' in vncticket:
+        return True """
+    """ vncconnect = proxmox.nodes('proxmox').qemu(f'{vmid}').vncwebsocket(vncticket=ticket['ticket'],port=vncticket['port']) """
+    return {
+        'path': f'/vnc/vnc.html?autoconnect=1&host=192.168.188.10&port=8006&path=vncwebsocket%3Fport%3D{quote(vncticket["port"])}%26vncticket%3D{quote(vncticket["ticket"],safe="")}',
+        'PVEAuthCookie': ticket['ticket']
+        }
 
 # print(get_system_resources())
 # print(get_all_vms())

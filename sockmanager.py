@@ -6,7 +6,7 @@ from threading import Thread
 import json
 from admin import authenticate_admin
 
-from auth import create_user_machine, get_all_machines, get_user, get_user_machines, login_session, get_user_from_sid
+from auth import create_user_machine, get_all_machines, get_user, get_user_machines, login_session, get_user_from_sid, get_machine_templates
 from packages import *
 #from proxmox import *
 
@@ -82,7 +82,10 @@ def create_sockmanager(sockio: SocketIO):
 
     @sockio.on('templates')
     def all_templates():
-        emit("templates",(
+       templates = get_machine_templates()
+       if templates:
+           emit("templates", tuple(templates))
+       """  emit("templates",(
         {
             'name': 'Machine Template 1',
             'description': 'Sample description for machine.',
@@ -95,7 +98,7 @@ def create_sockmanager(sockio: SocketIO):
             'name': 'Machine Template 3',
             'description': 'Sample description for machine.'
         },
-            ))
+            )) """
 
     @sockio.on('get_os_versions')
     def get_os_versions():

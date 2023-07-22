@@ -1,13 +1,13 @@
 from base64 import b64decode
 import json
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, make_response, redirect, request, jsonify, current_app
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, current_user
 from pymongo import MongoClient
 from jinja2 import Environment, FileSystemLoader
 from bson.objectid import ObjectId
 import hashlib
 
-from proxmox import get_new_vm_id
+from proxmox import connect_vm, get_new_vm_id
 
 auth = Blueprint('auth', __name__)
 
@@ -160,6 +160,20 @@ def delete_user(user):
         return jsonify({
             "result": "Failed to delete user."
         })
+    
+@auth.route('/connect', methods = ['GET'])
+@jwt_required()
+def connect_machine():
+    if not 'vmid' in request.args:
+        return jsonify({
+            "result": "error",
+            "reason": "no vmid"
+        })
+    res = connect_vm(current_user['username'], int(request.args.get('vmid')))
+    if res and 'path' in res:
+        resp = make_response({'vncpath': res.get('path')})
+        resp.set_cookie('PVEAuthCookie', res.get('PVEAuthCookie'))
+        return resp
 
 def login_session(user_name, sid):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
@@ -222,12 +236,15 @@ def get_all_machines():
 
 def create_user_machine(user, data: dict):
     machine_info = data.copy()
+    machine_desc = machine_info.pop('desc') + "\n\n__ " + user['username'] + " __"
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
         db = client[current_app.config['DATABASE_NAME']]
 
+        new_vmid = get_new_vm_id()
         options = {
+            "vmid": new_vmid,
             "name": f"{machine_info.pop('name')}",
-            "desc": f"{machine_info.pop('desc')}",
+            "desc": f"{machine_desc}",
             "owner": ObjectId(user['_id']),
             "state": "Stopped",
             "params": machine_info,
@@ -238,7 +255,7 @@ def create_user_machine(user, data: dict):
             **(machine_info.get("data", {})),
             'username': user["username"],
             'password': user['username'],
-            'vmid': get_new_vm_id()
+            'vmid': new_vmid
         })
 
         file_name = user["username"] + "-" + options.get("name") + ".tf"
@@ -249,3 +266,15 @@ def create_user_machine(user, data: dict):
 
         machine = db.machines.insert_one(options)
         return machine.inserted_id
+    
+def get_machine_templates():
+    with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
+        db = client[current_app.config['DATABASE_NAME']]
+
+        templates = db.templates.find({}, {'_id': False})
+        if templates:   
+            templates_list = []
+            for template in templates:
+                templates_list.append(template)
+            return templates_list
+        return False
