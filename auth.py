@@ -170,8 +170,8 @@ def connect_machine():
             "reason": "no vmid"
         })
     res = connect_vm(current_user['username'], int(request.args.get('vmid')))
-    if res and 'path' in res:
-        resp = make_response({'vncpath': res.get('path')})
+    if res and 'ticket' in res:
+        resp = make_response(res)
         resp.set_cookie('PVEAuthCookie', res.get('PVEAuthCookie'))
         return resp
 

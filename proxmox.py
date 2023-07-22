@@ -76,6 +76,8 @@ def connect_vm(user: str, vmid: int):
         return True """
     """ vncconnect = proxmox.nodes('proxmox').qemu(f'{vmid}').vncwebsocket(vncticket=ticket['ticket'],port=vncticket['port']) """
     return {
+        'port': vncticket["port"],
+        'ticket': vncticket["ticket"],
         'path': f'/vnc/vnc.html?autoconnect=1&host=192.168.188.10&port=8006&path=vncwebsocket%3Fport%3D{quote(vncticket["port"])}%26vncticket%3D{quote(vncticket["ticket"],safe="")}',
         'PVEAuthCookie': ticket['ticket']
         }
