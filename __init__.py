@@ -14,7 +14,7 @@ app.config['JWT_SECRET_KEY'] = ''.join(secrets.choice(string.ascii_letters + str
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 app.config['DATABASE_CONN_STRING'] = "mongodb://root:cyberlabs@localhost:27017/"
 app.config['DATABASE_NAME'] = "cyberlabs"
-cors = CORS(app)
+cors = CORS(app, supports_credentials=True)
 jwt = JWTManager(app)
 sockio = SocketIO(app, cors_allowed_origins="*")
 

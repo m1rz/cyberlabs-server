@@ -174,12 +174,25 @@ def connect_machine():
         resp = make_response(res)
         resp.set_cookie('PVEAuthCookie', res.get('PVEAuthCookie'))
         return resp
+
+@auth.route('/connect2', methods = ['GET'])
+def connect_machine_2():
+    if not 'vmid' in request.args or not 'username' in request.args:
+        return jsonify({
+            "result": "error",
+            "reason": "not enough creds"
+        })
+    res = connect_vm(request.args.get('username'), int(request.args.get('vmid')))
+    if res and 'ticket' in res:
+        resp = make_response(redirect(f"/proxmox/?console=kvm&novnc=1&vmid={request.args.get('vmid')}&vmname=server&node=proxmox&resize=off"))
+        resp.set_cookie('PVEAuthCookie', res.get('PVEAuthCookie'))
+        return resp
     
 @auth.route('/cookies', methods = ['GET'])
 def check_cookies():
-    return jsonify({
-        'cookie': request.cookies.get('PVEAuthCookie')
-    })
+    resp = make_response({'cookie': request.cookies.get('PVEAuthCookie')})
+    resp.set_cookie('PVEAuthCookie', "test")
+    return resp
 
 def login_session(user_name, sid):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
