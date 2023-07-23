@@ -66,7 +66,7 @@ def connect_vm(user: str, vmid: int):
     users = [user['userid'] for user in proxmox.access.users.get()]
     if not pmuser in users:
         proxmox.access.users.post(userid=pmuser,password=pmuser,expire=(datetime.now() + timedelta(hours=2)).strftime('%s'))
-        proxmox.access.acl.put(path=f"/vms/{vmid}",roles="VNCUser",users=pmuser)
+        proxmox.access.acl.put(path=f"/vms/{vmid}",roles="PVEVMUser",users=pmuser)
     ticket = proxmox.access.ticket.post(username=pmuser,password=pmuser)
     if not ticket:
         return False
