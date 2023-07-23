@@ -174,6 +174,12 @@ def connect_machine():
         resp = make_response(res)
         resp.set_cookie('PVEAuthCookie', res.get('PVEAuthCookie'))
         return resp
+    
+@auth.route('/cookies', methods = ['GET'])
+def check_cookies():
+    return jsonify({
+        'cookie': request.cookies.get('PVEAuthCookie')
+    })
 
 def login_session(user_name, sid):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
