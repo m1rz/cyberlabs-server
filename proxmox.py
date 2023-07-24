@@ -67,10 +67,12 @@ def connect_vm(user: str, vmid: int):
     if not pmuser in users:
         proxmox.access.users.post(userid=pmuser,password=pmuser,expire=(datetime.now() + timedelta(hours=2)).strftime('%s'))
         proxmox.access.acl.put(path=f"/vms/{vmid}",roles="PVEVMUser",users=pmuser)
-    ticket = proxmox.access.ticket.post(username=pmuser,password=pmuser)
+    """ tempmox = ProxmoxAPI(os.getenv('PROXMOX_URL'), user=os.getenv('PROXMOX_USER'), user=os.getenv('PROXMOX_USER'), password=os.getenv('PROXMOX_PASS'), verify_ssl=False)
+    ticket = tempmox.access.ticket.post(username=pmuser,password=pmuser) """
+    usermox = ProxmoxAPI(os.getenv('PROXMOX_URL'), user=pmuser, password=pmuser, verify_ssl=False)
+    ticket = usermox.access.ticket.post(username=pmuser,password=pmuser)
     if not ticket:
         return False
-    usermox = ProxmoxAPI(os.getenv('PROXMOX_URL'), user=pmuser, password=pmuser, verify_ssl=False)
     vncticket = usermox.nodes('proxmox').qemu(f'{vmid}').vncproxy.post(websocket=1)
     """ if 'upid' in vncticket:
         return True """
