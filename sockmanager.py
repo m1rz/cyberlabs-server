@@ -6,7 +6,7 @@ from threading import Thread
 import json
 from admin import authenticate_admin
 
-from auth import create_user_machine, get_all_machines, get_user, get_user_machines, login_session, get_user_from_sid, get_machine_templates
+from auth import create_user_machine, get_all_machines, get_user, get_user_machines, login_session, get_user_from_sid, get_machine_templates, remove_sid
 from packages import *
 #from proxmox import *
 
@@ -27,6 +27,10 @@ def create_sockmanager(sockio: SocketIO):
     @sockio.on('connect')
     def client_connected(auth):
         emit("authenticate")
+
+    @sockio.on("disconnect")
+    def client_disconnected():
+        remove_sid(request.sid)
 
     @sockio.on('authenticate')
     def checkjwt(role):
@@ -134,6 +138,7 @@ def create_sockmanager(sockio: SocketIO):
         if request_data:
             user = current_user
             transact_id = create_user_machine(user, request_data)
+
             return jsonify({
                 'result': 'success',
                 'id': f'{transact_id}',

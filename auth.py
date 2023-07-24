@@ -188,11 +188,11 @@ def connect_machine_2():
         resp.set_cookie('PVEAuthCookie', res.get('PVEAuthCookie'))
         return resp
     
-@auth.route('/cookies', methods = ['GET'])
+""" @auth.route('/cookies', methods = ['GET'])
 def check_cookies():
     resp = make_response({'cookie': request.cookies.get('PVEAuthCookie')})
     resp.set_cookie('PVEAuthCookie', "test")
-    return resp
+    return resp """
 
 def login_session(user_name, sid):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
@@ -219,6 +219,23 @@ def get_user_from_sid(sid):
         if user:
             return user
         return False
+    
+def get_user_sid(user_name):
+    with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
+        db = client[current_app.config['DATABASE_NAME']]
+        sids = db.sessions.find({'name': f"{user_name}"})
+        if sids:
+            sids_list = []
+            for sid in sids:
+                sids_list.append(sid['sid'])
+            return sids_list
+        return False
+    
+def remove_sid(sid):
+    with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
+        db = client[current_app.config['DATABASE_NAME']]
+        sid_deleted = db.sessions.delete_one({'sid': f"{sid}"})
+        return True if sid_deleted.acknowledged else False
 
 def get_user(user_name):
     with MongoClient(current_app.config['DATABASE_CONN_STRING']) as client:
@@ -274,7 +291,8 @@ def create_user_machine(user, data: dict):
             **(machine_info.get("data", {})),
             'username': user["username"],
             'password': user['username'],
-            'vmid': new_vmid
+            'vmid': new_vmid,
+            'name_underscore': options.get('name').replace(' ', '_')
         })
 
         file_name = user["username"] + "-" + options.get("name") + ".tf"
