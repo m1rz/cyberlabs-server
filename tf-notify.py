@@ -10,7 +10,7 @@ def monitor():
     for event in i.event_gen(yield_nones=False):
         (_, type_names, path, filename) = event
         if not 'terraform.tfstate' in filename and not 'terraform.tfstate.backup' in filename:
-            subprocess.run(['TF_IN_AUTOMATION=true','terraform', 'apply', '-auto-approve', '-input=false'])
+            subprocess.run(['terraform', 'apply', '-auto-approve', '-input=false'])
 
 if __name__ == '__main__':
     monitor()
