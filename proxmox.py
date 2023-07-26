@@ -9,8 +9,8 @@ import os, requests
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 load_dotenv()
 
-proxmox = ProxmoxAPI(os.getenv('PROXMOX_URL'), user=os.getenv('PROXMOX_USER'), token_name=os.getenv('PROXMOX_TOKEN_NAME'), token_value=os.getenv('PROXMOX_TOKEN_SECRET'), verify_ssl=False)
-
+#proxmox = ProxmoxAPI(os.getenv('PROXMOX_URL'), user=os.getenv('PROXMOX_USER'), token_name=os.getenv('PROXMOX_TOKEN_NAME'), token_value=os.getenv('PROXMOX_TOKEN_SECRET'), verify_ssl=False)
+proxmox = "temp"
 
 #### GET Methods ########################################
 

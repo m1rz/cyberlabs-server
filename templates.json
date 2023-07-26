@@ -1,0 +1,50 @@
+[{
+  "_id": {
+    "$oid": "64b953cbed5f3ade46252584"
+  },
+  "proxmox_base": "ubuntu-2204-server",
+  "contrib": "admin",
+  "data": {
+    "cores": 1,
+    "memory": 1024,
+    "packages": [
+      "python3-dev"
+    ]
+  },
+  "desc": "A basic template of an Ubuntu 22.04 machine with Python 3 installed.",
+  "name": "Ubuntu 22.04 (Python)"
+},{
+  "_id": {
+    "$oid": "64b9ae2ced5f3ade46252593"
+  },
+  "proxmox_base": "ubuntu-2204-server",
+  "contrib": "admin",
+  "data": {
+    "cores": 1,
+    "memory": 1024,
+    "packages": [
+      "apache2"
+    ]
+  },
+  "desc": "A basic template of an Ubuntu 22.04 machine with Apache web server installed.",
+  "name": "Ubuntu 22.04 (Apache)"
+},{
+  "_id": {
+    "$oid": "64b9af0eed5f3ade46252594"
+  },
+  "proxmox_base": "ubuntu-2204-server",
+  "contrib": "admin",
+  "data": {
+    "cores": 1,
+    "memory": 1024,
+    "packages": [
+      "apache2",
+      "mysql-server",
+      "php",
+      "libapache2-mod-php",
+      "php-mysql"
+    ]
+  },
+  "desc": "A basic template of an Ubuntu 22.04 machine with Apache, MySQL and PHP installed.",
+  "name": "Ubuntu 22.04 (LAMP)"
+}]
